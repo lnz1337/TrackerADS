@@ -1,8 +1,11 @@
 'use client'
 
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Badge, getHookBadgeVariant, getStatusBadgeVariant, getScoreBadgeVariant } from '@/components/ui/Badge'
 import { formatPercent, formatCurrency, formatDecimal } from '@/lib/utils'
+import { createClient } from '@/lib/supabase'
 import type { DashboardCreative } from '@/lib/types'
 
 export type SortField =
@@ -22,12 +25,31 @@ interface CreativesTableProps {
 }
 
 export function CreativesTable({ creatives, sortField, onSortChange }: CreativesTableProps) {
+  const router = useRouter()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Tem certeza que deseja excluir "${name}"? Esta ação não pode ser desfeita.`)) return
+    setDeletingId(id)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.from('creatives').delete().eq('id', id)
+      if (error) {
+        alert(`Erro ao excluir: ${error.message}`)
+      } else {
+        router.refresh()
+      }
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <div className="overflow-x-auto">
       <div className="mb-3 flex items-center gap-2">
         <span className="text-sm text-gray-500">Ordenar por:</span>
         <select
-          className="text-sm border border-gray-300 rounded px-2 py-1"
+          className="text-sm text-gray-900 border border-gray-300 rounded px-2 py-1"
           value={sortField}
           onChange={(e) => onSortChange(e.target.value as SortField)}
         >
@@ -61,6 +83,7 @@ export function CreativesTable({ creatives, sortField, onSortChange }: Creatives
             <th className="px-3 py-3 text-right font-medium text-gray-500">ROAS</th>
             <th className="px-3 py-3 text-center font-medium text-gray-500">Score</th>
             <th className="px-3 py-3 text-right font-medium text-gray-500">Atualizado</th>
+            <th className="px-3 py-3 text-center font-medium text-gray-500">Ações</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
@@ -131,11 +154,21 @@ export function CreativesTable({ creatives, sortField, onSortChange }: Creatives
                   '—'
                 )}
               </td>
+              <td className="px-3 py-3 text-center whitespace-nowrap">
+                <button
+                  onClick={() => handleDelete(dc.creative.id, dc.creative.name)}
+                  disabled={deletingId === dc.creative.id}
+                  className="text-red-500 hover:text-red-700 disabled:opacity-50 text-sm font-medium"
+                  title="Excluir criativo"
+                >
+                  {deletingId === dc.creative.id ? 'Excluindo...' : 'Excluir'}
+                </button>
+              </td>
             </tr>
           ))}
           {creatives.length === 0 && (
             <tr>
-              <td colSpan={15} className="px-3 py-8 text-center text-gray-500">
+              <td colSpan={16} className="px-3 py-8 text-center text-gray-500">
                 Nenhum criativo encontrado.
               </td>
             </tr>
