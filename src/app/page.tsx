@@ -27,10 +27,29 @@ export default async function DashboardPage() {
     .select('*')
 
   if (creativesError || logsError) {
+    const errorMsg = creativesError?.message || logsError?.message || ''
+    const isTableMissing = errorMsg.includes('schema cache') || errorMsg.includes('does not exist')
+
     return (
       <div className="text-center py-12">
-        <p className="text-red-600">Erro ao carregar dados. Verifique a conexão com o Supabase.</p>
-        <p className="text-sm text-gray-500 mt-2">{creativesError?.message || logsError?.message}</p>
+        <p className="text-red-600 text-lg font-medium">
+          {isTableMissing
+            ? 'As tabelas do banco de dados ainda não foram criadas.'
+            : 'Erro ao carregar dados. Verifique a conexão com o Supabase.'}
+        </p>
+        {isTableMissing ? (
+          <div className="mt-4 text-sm text-gray-600 max-w-md mx-auto text-left">
+            <p className="mb-2">Para configurar o banco de dados:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Abra o <strong>SQL Editor</strong> no Supabase Dashboard</li>
+              <li>Cole e execute o conteúdo de <code className="bg-gray-100 px-1 rounded">supabase/schema.sql</code></li>
+              <li>Opcionalmente, execute <code className="bg-gray-100 px-1 rounded">supabase/seed.sql</code> para dados de exemplo</li>
+              <li>Recarregue esta página</li>
+            </ol>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 mt-2">{errorMsg}</p>
+        )}
       </div>
     )
   }

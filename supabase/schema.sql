@@ -90,3 +90,15 @@ CREATE TRIGGER update_creatives_updated_at
 CREATE TRIGGER update_creative_metrics_logs_updated_at
   BEFORE UPDATE ON creative_metrics_logs
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ============================================================
+-- Row Level Security (RLS) - Allow all for MVP (no auth)
+-- ============================================================
+ALTER TABLE creatives ENABLE ROW LEVEL SECURITY;
+ALTER TABLE creative_metrics_logs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow all on creatives" ON creatives
+  FOR ALL USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow all on creative_metrics_logs" ON creative_metrics_logs
+  FOR ALL USING (true) WITH CHECK (true);
