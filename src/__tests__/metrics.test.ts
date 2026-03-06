@@ -302,6 +302,9 @@ describe('calculateCPAScore', () => {
   it('null → 0', () => {
     expect(calculateCPAScore(null)).toBe(0)
   })
+  it('cpa = 0 → 0 (no sales)', () => {
+    expect(calculateCPAScore(0)).toBe(0)
+  })
   it('cpa >= 100 → 0', () => {
     expect(calculateCPAScore(100)).toBe(0)
     expect(calculateCPAScore(200)).toBe(0)

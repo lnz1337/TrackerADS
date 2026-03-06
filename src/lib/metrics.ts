@@ -125,6 +125,7 @@ export function calculateCPCScore(cpc: number | null): number {
 /** s5 — CPA Score (0–10) — lower is better */
 export function calculateCPAScore(cpa: number | null): number {
   if (cpa == null) return 0
+  if (cpa <= 0) return 0
   if (cpa >= 100) return 0
   if (cpa > 50) return ((100 - cpa) / 50) * 5
   if (cpa >= 20) return 5 + ((50 - cpa) / 30) * 5
