@@ -3,11 +3,13 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { creativeSchema, type CreativeFormData } from '@/lib/validations'
 import { createClient } from '@/lib/supabase'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
+import { ComboBox } from '@/components/ui/ComboBox'
+import { ComboTextarea } from '@/components/ui/ComboTextarea'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
 import {
@@ -29,6 +31,35 @@ export function CreativeForm({ creative }: CreativeFormProps) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isEditing = !!creative
+
+  const [suggestions, setSuggestions] = useState<{
+    offer_name: string[]
+    niche: string[]
+    region: string[]
+    hook_text: string[]
+    main_copy: string[]
+  }>({ offer_name: [], niche: [], region: [], hook_text: [], main_copy: [] })
+
+  useEffect(() => {
+    async function loadSuggestions() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('creatives')
+        .select('offer_name, niche, region, hook_text, main_copy')
+      if (data) {
+        const unique = (arr: (string | null)[]) =>
+          Array.from(new Set(arr.filter(Boolean) as string[])).sort()
+        setSuggestions({
+          offer_name: unique(data.map((c) => c.offer_name)),
+          niche: unique(data.map((c) => c.niche)),
+          region: unique(data.map((c) => c.region)),
+          hook_text: unique(data.map((c) => c.hook_text)),
+          main_copy: unique(data.map((c) => c.main_copy)),
+        })
+      }
+    }
+    loadSuggestions()
+  }, [])
 
   const {
     register,
@@ -140,9 +171,10 @@ export function CreativeForm({ creative }: CreativeFormProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input
+        <ComboBox
           label="Nome da Oferta *"
           id="offer_name"
+          suggestions={suggestions.offer_name}
           {...register('offer_name')}
           error={errors.offer_name?.message}
         />
@@ -156,8 +188,8 @@ export function CreativeForm({ creative }: CreativeFormProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Input label="Nicho" id="niche" {...register('niche')} />
-        <Input label="Região" id="region" {...register('region')} />
+        <ComboBox label="Nicho" id="niche" suggestions={suggestions.niche} {...register('niche')} />
+        <ComboBox label="Região" id="region" suggestions={suggestions.region} {...register('region')} />
         <Input
           label="Data de Início *"
           id="start_date"
@@ -203,15 +235,17 @@ export function CreativeForm({ creative }: CreativeFormProps) {
         />
       </div>
 
-      <Textarea
+      <ComboTextarea
         label="Texto do Hook"
         id="hook_text"
+        suggestions={suggestions.hook_text}
         {...register('hook_text')}
       />
 
-      <Textarea
+      <ComboTextarea
         label="Copy Principal"
         id="main_copy"
+        suggestions={suggestions.main_copy}
         {...register('main_copy')}
       />
 
